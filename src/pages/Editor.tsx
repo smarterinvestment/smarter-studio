@@ -455,7 +455,7 @@ Responde SOLO con el contenido entre las marcas indicadas.`
             <canvas ref={cvRef} style={{position:"absolute",inset:0,width:"100%",height:"100%"}}/>
             {!recording&&(
               <div ref={prevRef} style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"space-between",padding:16,background:"rgba(2,12,26,0.45)"}}>
-                <span style={{fontSize:9,fontWeight:700,padding:"2px 9px",borderRadius:20,alignSelf:"flex-start",background:`${ac}33`,color:ac,border:`1px solid ${ac}66`}}>{cur.label}</span>
+                
                 <div>
                   <p style={{fontSize:9,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.1em",color:ac,margin:"0 0 5px"}}>{cur.subtitle}</p>
                   <h2 style={{fontSize:Math.max(13,pW/13),fontWeight:800,color:"white",lineHeight:1.25,margin:"0 0 7px"}}>{cur.title}</h2>
