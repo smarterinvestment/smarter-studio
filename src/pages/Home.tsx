@@ -1,37 +1,42 @@
-const stats = [
-  { label: "Total Views", value: "1.24M", color: "text-accent" },
-  { label: "Revenue", value: "$8,420", color: "text-gold" },
-  { label: "Subscribers", value: "+3,210", color: "text-green" },
-  { label: "Avg RPM", value: "$6.80", color: "text-primary" },
+﻿import { useNavigate } from "react-router-dom"
+
+const cards = [
+  { to: "/editor", icon: "🎬", title: "Editor de Carruseles", desc: "Slides SPIN con partículas 3D. Exporta PNG, graba video, copia copy.", color: "#2979FF", badge: "PRO" },
+  { to: "/chat", icon: "👑", title: "Rey Salomón IA", desc: "Chat con Claude. Metodología SPIN para conectar con tu audiencia.", color: "#00E5FF", badge: "IA" },
+  { to: "/library", icon: "📚", title: "Biblioteca", desc: "Guarda y reutiliza tus diseños. Exporta e importa colecciones.", color: "#FFD740", badge: "LOCAL" },
 ]
 
 export default function Home() {
+  const navigate = useNavigate()
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">
-          Welcome to <span className="text-primary">Smarter</span><span className="text-accent">Studio</span>
+    <div style={{ minHeight: "calc(100vh - 52px)", background: "#020c1a", fontFamily: "Inter,sans-serif" }}>
+      <div style={{ position: "relative", overflow: "hidden", padding: "60px 16px 40px", textAlign: "center" }}>
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 50% at 50% 0%,rgba(41,121,255,0.15) 0%,transparent 70%)", pointerEvents: "none" }} />
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#00E5FF", marginBottom: 12 }}>Content Studio</p>
+        <h1 style={{ fontSize: "clamp(2rem,6vw,3.5rem)", fontWeight: 800, lineHeight: 1.1, marginBottom: 16,
+          background: "linear-gradient(135deg,#2979FF 0%,#00E5FF 50%,#FFD740 100%)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+          Crea contenido viral
         </h1>
-        <p className="mt-2 text-white/50">Your AI-powered content intelligence platform.</p>
+        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.55)", maxWidth: 480, margin: "0 auto" }}>
+          Estructura SPIN · Animaciones 3D · Sabiduría del Rey Salomón
+        </p>
       </div>
-      <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl border border-border bg-surface p-5">
-            <p className="text-xs uppercase tracking-wider text-white/40">{label}</p>
-            <p className={`mt-2 text-2xl font-bold ${color}`}>{value}</p>
-          </div>
-        ))}
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {[
-          { href: "/editor", title: "Script Editor", desc: "Write scripts with AI assistance.", color: "text-accent", btn: "bg-primary text-white", btnLabel: "Open Editor" },
-          { href: "/chat", title: "AI Chat", desc: "Ask about your channel and niche.", color: "text-gold", btn: "bg-accent/20 text-accent", btnLabel: "Start Chatting" },
-          { href: "/library", title: "Library", desc: "Browse swipe files and ideas.", color: "text-green", btn: "bg-green/20 text-green", btnLabel: "Browse Library" },
-        ].map(({ href, title, desc, color, btn, btnLabel }) => (
-          <div key={href} className="rounded-xl border border-border bg-surface p-6">
-            <h2 className={`mb-2 text-lg font-semibold ${color}`}>{title}</h2>
-            <p className="mb-4 text-sm text-white/50">{desc}</p>
-            <a href={href} className={`inline-flex rounded-lg px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-80 ${btn}`}>{btnLabel}</a>
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 16px 60px", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 16 }}>
+        {cards.map(c => (
+          <div key={c.to} onClick={() => navigate(c.to)}
+            style={{ background: "rgba(13,21,38,0.9)", backdropFilter: "blur(20px)", border: "1px solid #0d2240", borderRadius: 20, padding: 24, cursor: "pointer", transition: "all 0.2s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = c.color + "66"; (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#0d2240"; (e.currentTarget as HTMLElement).style.transform = "none" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+              <span style={{ fontSize: 32 }}>{c.icon}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: c.color + "22", color: c.color, border: `1px solid ${c.color}44`, alignSelf: "flex-start" }}>{c.badge}</span>
+            </div>
+            <h2 style={{ fontSize: 17, fontWeight: 700, color: "white", marginBottom: 8 }}>{c.title}</h2>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{c.desc}</p>
+            <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 600, color: c.color }}>
+              Abrir <span>›</span>
+            </div>
           </div>
         ))}
       </div>
