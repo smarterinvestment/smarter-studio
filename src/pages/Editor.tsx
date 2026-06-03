@@ -1,23 +1,14 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from "react"
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface Slide {
-  id: number
-  label: string
-  title: string
-  subtitle: string
-  body: string
-  imagePrompt?: string
-  videoPrompt?: string
-  voiceover?: string
-  duration?: number
+  id: number; label: string; title: string; subtitle: string; body: string
+  imagePrompt?: string; videoPrompt?: string; voiceover?: string; duration?: number
 }
 type Format = "1:1" | "9:16" | "4:5"
 type Theme = "#2979FF" | "#00E5FF" | "#FFD740" | "#00C853" | "#FF5252" | "multi"
 type RightPanel = "edit" | "storyboard"
 interface Particle { x:number;y:number;vx:number;vy:number;r:number;op:number;pulse:number;ps:number }
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DIMS: Record<Format,[number,number]> = { "1:1":[1,1],"9:16":[9,16],"4:5":[4,5] }
 const SPIN_LABELS = ["Situacion","Problema","Implicacion","Necesidad-Solucion","Rey Salomon Hook","CTA"]
 const THEMES: {c:Theme;name:string}[] = [
@@ -27,39 +18,56 @@ const THEMES: {c:Theme;name:string}[] = [
 const PALETTE = ["#2979FF","#00E5FF","#FFD740","#00C853","#FF5252"]
 
 const ANGULOS = [
-  { id:"escasez",   label:"Escasez",    desc:"El miedo a no tener suficiente",      emoji:"âš¡" },
-  { id:"urgencia",  label:"Urgencia",   desc:"El tiempo se acaba, actua ahora",     emoji:"â°" },
-  { id:"esperanza", label:"Esperanza",  desc:"Un futuro mejor es posible",          emoji:"ðŸŒŸ" },
-  { id:"miedo",     label:"Miedo",      desc:"Las consecuencias de no actuar",      emoji:"ðŸ˜°" },
-  { id:"orgullo",   label:"Orgullo",    desc:"Se el ejemplo en tu familia",         emoji:"ðŸ‘‘" },
-  { id:"identidad", label:"Identidad",  desc:"Soy quien administra bien",           emoji:"ðŸŽ¯" },
-  { id:"conciencia",label:"Conciencia", desc:"El dinero es responsabilidad",        emoji:"ðŸ§ " },
-  { id:"amor",      label:"Amor",       desc:"Administrar bien es un acto de amor", emoji:"â¤ï¸" },
+  { id:"escasez",    label:"Escasez",    desc:"El miedo a no tener suficiente",       color:"#FF5252" },
+  { id:"urgencia",   label:"Urgencia",   desc:"El tiempo se acaba, actua ahora",      color:"#FFD740" },
+  { id:"esperanza",  label:"Esperanza",  desc:"Un futuro mejor es posible",           color:"#00C853" },
+  { id:"miedo",      label:"Miedo",      desc:"Las consecuencias de no actuar",       color:"#FF5252" },
+  { id:"orgullo",    label:"Orgullo",    desc:"Se el ejemplo en tu familia",          color:"#FFD740" },
+  { id:"identidad",  label:"Identidad",  desc:"Soy quien administra bien su dinero",  color:"#2979FF" },
+  { id:"conciencia", label:"Conciencia", desc:"El dinero es una responsabilidad",     color:"#00E5FF" },
+  { id:"amor",       label:"Amor",       desc:"Administrar bien es un acto de amor",  color:"#FF5252" },
 ]
 
 const CONTENT_TYPES = [
-  { id:"carousel", label:"Carrusel", emoji:"ðŸ“±", desc:"6 slides SPIN para Instagram/LinkedIn" },
-  { id:"reel",     label:"Reel",     emoji:"ðŸŽ¬", desc:"Guion de video corto 30-60s vertical" },
-  { id:"both",     label:"Ambos",    emoji:"âœ¨", desc:"Carrusel + Guion de Reel completo" },
+  { id:"carousel", label:"Carrusel", desc:"6 slides SPIN Instagram/LinkedIn" },
+  { id:"reel",     label:"Reel",     desc:"Guion de video corto 30-60s" },
+  { id:"both",     label:"Ambos",    desc:"Carrusel + Guion de Reel" },
+]
+
+const QUICK_TOPICS = [
+  { group: "Principios Rey Salomon", topics: [
+    "Honra a Dios con tus primicias y tus graneros se llenaran",
+    "El necio gasta todo lo que gana, el sabio guarda para el futuro",
+    "Quien da al pobre le presta a Dios y sera recompensado",
+    "El que trabaja la tierra tendra abundancia, el que persigue fantasias carece de juicio",
+    "Los planes del diligente llevan a la abundancia, los apresurados llevan a la pobreza",
+    "El rico gobierna al pobre, el que pide prestado es esclavo del que presta",
+  ]},
+  { group: "Finanzas Personales", topics: [
+    "Ahorrar el 10% de tu sueldo todos los meses",
+    "Salir de deudas en 12 meses con el metodo bola de nieve",
+    "Construir tu fondo de emergencia desde cero",
+    "Invertir desde cero sin saber nada de bolsa",
+    "El poder del interes compuesto a largo plazo",
+    "Los gastos hormiga que te roban sin que te des cuenta",
+  ]},
 ]
 
 const DEFAULT_SLIDES: Slide[] = [
-  { id:1,label:"Situacion",title:"Sabias que el 80% pierde dinero?",subtitle:"La realidad que nadie te cuenta",body:"La mayoria trabaja toda su vida sin construir riqueza real.",imagePrompt:"Cinematic wide shot of a busy city street at golden hour, crowds of people walking, shallow depth of field, moody financial district atmosphere, dark tones",videoPrompt:"Time-lapse of busy city intersection, people rushing, money floating away in the wind, slow-motion close-up of empty wallet, dark cinematic grade",voiceover:"El 80% de las personas trabajan toda su vida... y aun asi no construyen riqueza. Hoy te cuento por que.",duration:8 },
-  { id:2,label:"Problema",title:"El problema no es tu salario",subtitle:"Es lo que haces con el",body:"Sin estrategia, cada peso se escapa entre gastos invisibles y malos habitos.",imagePrompt:"Close-up of hands holding crumpled money, coins scattered on dark surface, dramatic lighting, financial stress concept, moody atmosphere",videoPrompt:"Money falling through fingers in slow motion, receipts and invoices flying around, person looking stressed at laptop screen, dark blue tones",voiceover:"El problema no es cuanto ganas. Es que sin un sistema, el dinero desaparece solo.",duration:8 },
-  { id:3,label:"Implicacion",title:"10 anos mas tarde...",subtitle:"El costo del tiempo perdido",body:"Cada mes sin invertir es dinero que el interes compuesto nunca recuperara.",imagePrompt:"Split screen concept: left side young person with empty piggy bank, right side same person older looking stressed, financial timeline visualization",videoPrompt:"Calendar pages flying fast, clock ticking, compound interest graph declining, aging effect on face, dramatic red and blue color grade",voiceover:"Cada mes que pasa sin invertir... es una oportunidad que el interes compuesto nunca te devuelve.",duration:9 },
-  { id:4,label:"Necesidad-Solucion",title:"La solucion es mas simple",subtitle:"Tres pasos que cambian todo",body:"1. Conoce tu flujo. 2. Elimina deudas toxicas. 3. Invierte automaticamente.",imagePrompt:"Clean minimal infographic style, three glowing steps with icons on dark background, gold and blue colors, modern financial planning visualization",videoPrompt:"Animated flowchart appearing step by step, checkmarks appearing, progress bars filling up, optimistic gold and green color palette, upbeat energy",voiceover:"Tres pasos. Solo tres. Conoce tu flujo de dinero, elimina deudas toxicas, e invierte automaticamente.",duration:10 },
-  { id:5,label:"Rey Salomon Hook",title:"El que cuida su dinero, cuida su libertad",subtitle:"Proverbio milenario",body:"La prosperidad no es suerte, es disciplina convertida en habito diario.",imagePrompt:"Ancient wisdom meets modern finance: golden book with financial symbols, rays of light, wise atmosphere, deep blue and gold tones, cinematic",videoPrompt:"Slow zoom into ancient golden text transforming into modern financial charts, wisdom symbol overlaid with modern skyline, epic orchestral feel",voiceover:"El Rey Salomon lo sabia hace tres mil anos: la prosperidad no es suerte. Es disciplina hecha habito.",duration:9 },
-  { id:6,label:"CTA",title:"Listo para cambiar tu historia?",subtitle:"El primer paso es hoy",body:"Sigue esta cuenta. Comenta LISTO y te envio mi guia gratuita.",imagePrompt:"Motivational: person standing on mountain top looking at bright horizon, sunrise, freedom concept, warm gold and orange tones, aspirational mood",videoPrompt:"Person walking confidently forward, sunrise in background, animated follow/like buttons appearing, clean call-to-action overlay, energetic upbeat ending",voiceover:"Si quieres cambiar tu historia financiera, el primer paso es hoy. Comenta LISTO y te envio mi guia gratuita.",duration:8 },
+  { id:1,label:"Situacion",title:"Sabias que el 80% pierde dinero?",subtitle:"La realidad que nadie te cuenta",body:"La mayoria trabaja toda su vida sin construir riqueza real." },
+  { id:2,label:"Problema",title:"El problema no es tu salario",subtitle:"Es lo que haces con el",body:"Sin estrategia, cada peso se escapa entre gastos invisibles y malos habitos." },
+  { id:3,label:"Implicacion",title:"10 anos mas tarde...",subtitle:"El costo del tiempo perdido",body:"Cada mes sin invertir es dinero que el interes compuesto nunca recuperara." },
+  { id:4,label:"Necesidad-Solucion",title:"La solucion es mas simple de lo que crees",subtitle:"Tres pasos que cambian todo",body:"1. Conoce tu flujo. 2. Elimina deudas toxicas. 3. Invierte automaticamente." },
+  { id:5,label:"Rey Salomon Hook",title:"El que cuida su dinero cuida su libertad",subtitle:"Proverbio milenario",body:"La prosperidad no es suerte, es disciplina convertida en habito diario." },
+  { id:6,label:"CTA",title:"Listo para cambiar tu historia?",subtitle:"El primer paso es hoy",body:"Sigue esta cuenta. Comenta LISTO y te envio mi guia gratuita." },
 ]
 
-// â”€â”€â”€ Utils â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function rgba2(hex:string,a:number,i=0){
   const h=hex==="multi"?PALETTE[i%PALETTE.length]:hex
   const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16)
   return `rgba(${r},${g},${b},${a})`
 }
 
-// â”€â”€â”€ Particle canvas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function useCanvas(ref:React.RefObject<HTMLCanvasElement>,theme:Theme,slide:Slide,recording:boolean){
   const pts=useRef<Particle[]>([])
   const raf=useRef(0)
@@ -67,7 +75,6 @@ function useCanvas(ref:React.RefObject<HTMLCanvasElement>,theme:Theme,slide:Slid
   const slR=useRef(slide); useEffect(()=>{slR.current=slide},[slide])
   const recR=useRef(recording); useEffect(()=>{recR.current=recording},[recording])
   const gc=useCallback((a:number,i:number)=>rgba2(thR.current,a,i),[])
-
   useEffect(()=>{
     const cv=ref.current; if(!cv) return
     const ctx=cv.getContext("2d"); if(!ctx) return
@@ -80,8 +87,7 @@ function useCanvas(ref:React.RefObject<HTMLCanvasElement>,theme:Theme,slide:Slid
         pulse:Math.random()*Math.PI*2,ps:Math.random()*.02+.01,
       }))
     }
-    init()
-    const ro=new ResizeObserver(init); ro.observe(cv)
+    init(); const ro=new ResizeObserver(init); ro.observe(cv)
     const draw=()=>{
       const W=cv.width,H=cv.height
       ctx.clearRect(0,0,W,H)
@@ -101,8 +107,7 @@ function useCanvas(ref:React.RefObject<HTMLCanvasElement>,theme:Theme,slide:Slid
         ctx.beginPath();ctx.arc(pt.x,pt.y,r*4,0,Math.PI*2);ctx.fillStyle=g2;ctx.fill()
         ctx.beginPath();ctx.arc(pt.x,pt.y,r,0,Math.PI*2);ctx.fillStyle=gc(Math.min(a*1.5,1),i);ctx.fill()
         pt.x+=pt.vx;pt.y+=pt.vy
-        if(pt.x<0||pt.x>W)pt.vx*=-1
-        if(pt.y<0||pt.y>H)pt.vy*=-1
+        if(pt.x<0||pt.x>W)pt.vx*=-1; if(pt.y<0||pt.y>H)pt.vy*=-1
       })
       if(recR.current){
         const s=slR.current,ac=thR.current==="multi"?"#2979FF":thR.current
@@ -129,7 +134,6 @@ function useCanvas(ref:React.RefObject<HTMLCanvasElement>,theme:Theme,slide:Slid
   },[gc])
 }
 
-// â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function Editor(){
   const [slides,setSlides]=useState<Slide[]>(()=>{
     try{const d=localStorage.getItem("ss-load");if(d){localStorage.removeItem("ss-load");const p=JSON.parse(d);return p.slides||DEFAULT_SLIDES}}catch{}
@@ -143,14 +147,13 @@ export default function Editor(){
   const [saveModal,setSaveModal]=useState(false)
   const [saveName,setSaveName]=useState("")
   const [rightPanel,setRightPanel]=useState<RightPanel>("edit")
-
-  // Generator state
   const [topic,setTopic]=useState("")
   const [contentType,setContentType]=useState<string>("both")
   const [selectedAngulos,setSelectedAngulos]=useState<string[]>(["esperanza","identidad"])
   const [generating,setGenerating]=useState(false)
   const [genError,setGenError]=useState("")
   const [reelScript,setReelScript]=useState<string>("")
+  const [activeGroup,setActiveGroup]=useState(0)
 
   const cvRef=useRef<HTMLCanvasElement>(null)
   const prevRef=useRef<HTMLDivElement>(null)
@@ -167,7 +170,6 @@ export default function Editor(){
   let pH=maxH,pW=(pH*fw)/fh
   const maxW=360; if(pW>maxW){pW=maxW;pH=(pW*fh)/fw}
 
-  // â”€â”€ Generate carousel + storyboard with Claude â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const generateCarousel=async()=>{
     if(!topic.trim()){setGenError("Escribe el tema o principio");return}
     if(selectedAngulos.length===0){setGenError("Selecciona al menos un angulo emocional");return}
@@ -175,59 +177,43 @@ export default function Editor(){
     if(!key){setGenError("Configura tu Claude API Key en /chat primero");return}
     setGenerating(true);setGenError("");setReelScript("")
     const angDesc=selectedAngulos.map(id=>ANGULOS.find(a=>a.id===id)).filter(Boolean).map(a=>`${a!.label}: ${a!.desc}`).join("\n")
+    const includeCarousel=contentType==="carousel"||contentType==="both"
+    const includeReel=contentType==="reel"||contentType==="both"
 
-    const includeCarousel = contentType==="carousel"||contentType==="both"
-    const includeReel = contentType==="reel"||contentType==="both"
-
-    const prompt=`Eres el Rey Salomon, experto en contenido financiero viral para redes sociales.
+    const prompt=`Eres el Rey Salomon, experto en contenido financiero viral.
 
 TEMA: ${topic}
-ANGULOS EMOCIONALES (usa estos para el tono, no los menciones literalmente):
+ANGULOS EMOCIONALES (usa para el tono, no los menciones literalmente):
 ${angDesc}
 
-${includeCarousel?`
-=== PARTE 1: CARRUSEL INSTAGRAM (6 slides SPIN) ===
-Crea 6 slides con estructura SPIN. Responde el JSON del carrusel exactamente en este formato, sin markdown:
+${includeCarousel?`=== PARTE 1: CARRUSEL INSTAGRAM 6 SLIDES SPIN ===
+Responde el JSON exactamente entre estas marcas, sin markdown:
 CAROUSEL_JSON_START
 [
-  {"label":"Situacion","title":"...","subtitle":"...","body":"...","imagePrompt":"...","videoPrompt":"...","voiceover":"...","duration":8},
-  {"label":"Problema","title":"...","subtitle":"...","body":"...","imagePrompt":"...","videoPrompt":"...","voiceover":"...","duration":8},
-  {"label":"Implicacion","title":"...","subtitle":"...","body":"...","imagePrompt":"...","videoPrompt":"...","voiceover":"...","duration":9},
-  {"label":"Necesidad-Solucion","title":"...","subtitle":"...","body":"...","imagePrompt":"...","videoPrompt":"...","voiceover":"...","duration":10},
-  {"label":"Rey Salomon Hook","title":"...","subtitle":"...","body":"...","imagePrompt":"...","videoPrompt":"...","voiceover":"...","duration":9},
-  {"label":"CTA","title":"...","subtitle":"...","body":"...","imagePrompt":"...","videoPrompt":"...","voiceover":"...","duration":8}
+  {"label":"Situacion","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":8},
+  {"label":"Problema","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":8},
+  {"label":"Implicacion","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":9},
+  {"label":"Necesidad-Solucion","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":10},
+  {"label":"Rey Salomon Hook","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":9},
+  {"label":"CTA","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":8}
 ]
 CAROUSEL_JSON_END
+Reglas JSON: title maximo 8 palabras impactante, subtitle maximo 6 palabras, body 2-3 oraciones concretas, voiceover 1-2 oraciones para narrar, imagePrompt descripcion visual detallada en ingles para Midjourney, videoPrompt descripcion cinematografica en ingles para Higgsfield/Runway.`:""}
 
-Reglas para el JSON:
-- title: maximo 8 palabras, impactante
-- subtitle: maximo 6 palabras
-- body: 2-3 oraciones concretas
-- imagePrompt: descripcion detallada en ingles para Midjourney/Flux, incluye estilo visual, iluminacion, colores, composicion
-- videoPrompt: descripcion de movimiento y escena para Higgsfield/Runway/Kling, incluye tipo de camara, movimiento, transicion
-- voiceover: texto narrado natural para ese slide, maximo 2 oraciones
-- duration: segundos sugeridos para ese slide (entre 6 y 12)
-`:""}
-
-${includeReel?`
-=== PARTE 2: GUION DE REEL (30-60 segundos) ===
-Crea un guion completo de Reel vertical (9:16) sobre el mismo tema.
-Formato exacto â€” escribe entre las marcas:
+${includeReel?`=== PARTE 2: GUION REEL VERTICAL 9:16 (30-60 segundos) ===
 REEL_SCRIPT_START
-**DURACION TOTAL**: [X segundos]
-**HOOK (0-3s)**: [texto que aparece en pantalla + accion visual]
-**ESCENA 1 (3-8s)**: [descripcion visual para Higgsfield] | TEXTO EN PANTALLA: "[texto]" | VOZ: "[narracion]"
-**ESCENA 2 (8-15s)**: [descripcion visual] | TEXTO EN PANTALLA: "[texto]" | VOZ: "[narracion]"
-**ESCENA 3 (15-25s)**: [descripcion visual] | TEXTO EN PANTALLA: "[texto]" | VOZ: "[narracion]"
-**ESCENA 4 (25-38s)**: [descripcion visual] | TEXTO EN PANTALLA: "[texto]" | VOZ: "[narracion]"
-**CIERRE CTA (38-50s)**: [descripcion visual] | TEXTO EN PANTALLA: "[texto]" | VOZ: "[narracion]"
-**PROMPT HIGGSFIELD**: [prompt completo en ingles para generar el video base con Higgsfield AI, detallado con estilo cinematografico, movimiento de camara, paleta de colores, atmosfera]
-**PROMPT IMAGEN THUMBNAIL**: [prompt en ingles para Midjourney/Flux para la miniatura del reel]
-**MUSICA SUGERIDA**: [tipo de musica y mood]
-REEL_SCRIPT_END
-`:""}
+DURACION TOTAL: [X segundos]
+HOOK (0-3s): [texto en pantalla] | VISUAL: [descripcion escena] | VOZ: [narracion]
+ESCENA 1 (3-10s): [descripcion visual para Higgsfield] | TEXTO: [texto en pantalla] | VOZ: [narracion]
+ESCENA 2 (10-20s): [descripcion visual] | TEXTO: [texto] | VOZ: [narracion]
+ESCENA 3 (20-32s): [descripcion visual] | TEXTO: [texto] | VOZ: [narracion]
+ESCENA 4 (32-45s): [descripcion visual] | TEXTO: [texto] | VOZ: [narracion]
+CTA (45-55s): [descripcion visual] | TEXTO: [texto] | VOZ: [narracion]
+PROMPT HIGGSFIELD: [prompt completo en ingles para generar el video, cinematografico, con movimiento de camara, colores, atmosfera]
+MUSICA: [tipo de musica y mood]
+REEL_SCRIPT_END`:""}
 
-Responde con exactamente el contenido solicitado entre las marcas.`
+Responde SOLO con el contenido entre las marcas indicadas.`
 
     try{
       const res=await fetch("https://api.anthropic.com/v1/messages",{
@@ -238,45 +224,22 @@ Responde con exactamente el contenido solicitado entre las marcas.`
       if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error((e as {error?:{message?:string}})?.error?.message||`Error ${res.status}`)}
       const data=await res.json() as {content?:{text:string}[]}
       const text=data.content?.[0]?.text||""
-
-      // Parse carousel
       if(includeCarousel){
-        const carouselMatch=text.match(/CAROUSEL_JSON_START\s*([\s\S]*?)\s*CAROUSEL_JSON_END/)
-        if(carouselMatch){
-          const generated=JSON.parse(carouselMatch[1]) as Slide[]
-          setSlides(generated.map((s,i)=>({id:i+1,...s})))
-          setIdx(0)
-        } else {
-          // fallback: buscar JSON array
-          const jsonMatch=text.match(/\[[\s\S]*?\](?=\s*(?:REEL|$))/)
-          if(jsonMatch){
-            const generated=JSON.parse(jsonMatch[0]) as Slide[]
-            setSlides(generated.map((s,i)=>({id:i+1,...s})))
-            setIdx(0)
-          }
-        }
+        const m=text.match(/CAROUSEL_JSON_START\s*([\s\S]*?)\s*CAROUSEL_JSON_END/)
+        if(m){setSlides(JSON.parse(m[1]).map((s:Slide,i:number)=>({id:i+1,...s})));setIdx(0)}
       }
-
-      // Parse reel script
       if(includeReel){
-        const reelMatch=text.match(/REEL_SCRIPT_START\s*([\s\S]*?)\s*REEL_SCRIPT_END/)
-        if(reelMatch){
-          setReelScript(reelMatch[1].trim())
-          setRightPanel("storyboard")
-        }
+        const m=text.match(/REEL_SCRIPT_START\s*([\s\S]*?)\s*REEL_SCRIPT_END/)
+        if(m){setReelScript(m[1].trim());setRightPanel("storyboard")}
       }
-
-      toast2(includeReel&&includeCarousel?"Carrusel + Reel generados!":includeReel?"Guion de Reel generado!":"Carrusel generado!")
+      toast2(includeReel&&includeCarousel?"Carrusel + Reel generados!":includeReel?"Reel generado!":"Carrusel generado!")
     }catch(e){
       setGenError(e instanceof Error?e.message:"Error generando contenido")
     }finally{setGenerating(false)}
   }
 
-  const toggleAngulo=(id:string)=>{
-    setSelectedAngulos(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id])
-  }
+  const toggleAngulo=(id:string)=>setSelectedAngulos(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id])
 
-  // â”€â”€ Export / Record / Copy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const exportPNG=async()=>{
     if(!prevRef.current)return
     try{const h2c=(await import("html2canvas")).default
@@ -309,49 +272,36 @@ Responde con exactamente el contenido solicitado entre las marcas.`
 
   const copyCopy=()=>{
     const txt=slides.map(s=>`[${s.label}]\n${s.title}\n${s.subtitle}\n${s.body}`).join("\n\n---\n\n")
-    navigator.clipboard.writeText(txt).then(()=>toast2("Copiado al portapapeles"))
+    navigator.clipboard.writeText(txt).then(()=>toast2("Copiado!"))
+  }
+
+  const copySlidePrompts=(s:Slide)=>{
+    const txt=[s.imagePrompt?`IMAGE:\n${s.imagePrompt}`:"",s.videoPrompt?`\nVIDEO (Higgsfield):\n${s.videoPrompt}`:"",s.voiceover?`\nVOZ:\n${s.voiceover}`:""].filter(Boolean).join("")
+    navigator.clipboard.writeText(txt).then(()=>toast2("Prompts copiados"))
   }
 
   const exportStoryboard=()=>{
     const lines:string[]=[]
-    lines.push(`GUION VISUAL â€” ${topic||"Contenido"}`)
-    lines.push(`Generado: ${new Date().toLocaleDateString("es")}`)
+    lines.push(`GUION VISUAL - ${topic||"Contenido"}`)
+    lines.push(`Fecha: ${new Date().toLocaleDateString("es")}`)
     lines.push(`Angulos: ${selectedAngulos.join(", ")}`)
     lines.push("=".repeat(60))
-    lines.push("")
     slides.forEach((s,i)=>{
-      lines.push(`SLIDE ${i+1}: ${s.label.toUpperCase()}`)
+      lines.push(`\nSLIDE ${i+1}: ${s.label.toUpperCase()}`)
       lines.push(`TITULO: ${s.title}`)
       lines.push(`SUBTITULO: ${s.subtitle}`)
       lines.push(`CUERPO: ${s.body}`)
-      if(s.voiceover) lines.push(`VOZ: ${s.voiceover}`)
-      if(s.duration) lines.push(`DURACION: ${s.duration}s`)
-      if(s.imagePrompt) lines.push(`\nPROMPT IMAGEN (Midjourney/Flux):\n${s.imagePrompt}`)
-      if(s.videoPrompt) lines.push(`\nPROMPT VIDEO (Higgsfield/Runway/Kling):\n${s.videoPrompt}`)
+      if(s.voiceover)lines.push(`VOZ: ${s.voiceover}`)
+      if(s.duration)lines.push(`DURACION: ${s.duration}s`)
+      if(s.imagePrompt)lines.push(`\nPROMPT IMAGEN:\n${s.imagePrompt}`)
+      if(s.videoPrompt)lines.push(`\nPROMPT VIDEO (Higgsfield):\n${s.videoPrompt}`)
       lines.push("-".repeat(40))
-      lines.push("")
     })
-    if(reelScript){
-      lines.push("=".repeat(60))
-      lines.push("GUION REEL")
-      lines.push("=".repeat(60))
-      lines.push("")
-      lines.push(reelScript)
-    }
+    if(reelScript){lines.push("\n"+"=".repeat(60));lines.push("GUION REEL");lines.push("=".repeat(60));lines.push(reelScript)}
     const blob=new Blob([lines.join("\n")],{type:"text/plain;charset=utf-8"})
     const url=URL.createObjectURL(blob)
     const a=document.createElement("a");a.href=url;a.download=`guion-${(topic||"contenido").replace(/\s+/g,"-").slice(0,30)}.txt`;a.click()
-    URL.revokeObjectURL(url)
-    toast2("Guion exportado")
-  }
-
-  const copySlidePrompts=(s:Slide)=>{
-    const txt=[
-      s.imagePrompt?`IMAGE PROMPT:\n${s.imagePrompt}`:"",
-      s.videoPrompt?`\nVIDEO PROMPT (Higgsfield):\n${s.videoPrompt}`:"",
-      s.voiceover?`\nVOICEOVER:\n${s.voiceover}`:"",
-    ].filter(Boolean).join("")
-    navigator.clipboard.writeText(txt).then(()=>toast2("Prompts copiados"))
+    URL.revokeObjectURL(url);toast2("Guion exportado")
   }
 
   const saveLib=()=>{
@@ -367,7 +317,6 @@ Responde con exactamente el contenido solicitado entre las marcas.`
 
   const F:React.CSSProperties={fontFamily:"Inter,sans-serif"}
 
-  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return(
     <div style={{...F,display:"flex",flexDirection:"column",height:"calc(100vh - 52px)",background:"#020c1a",overflow:"hidden"}}>
 
@@ -413,11 +362,11 @@ Responde con exactamente el contenido solicitado entre las marcas.`
         ))}
       </div>
 
-      {/* 3-column layout */}
+      {/* 3 columns */}
       <div style={{display:"flex",flex:1,overflow:"hidden",minHeight:0}}>
 
-        {/* LEFT: Generator panel */}
-        <div style={{width:260,flexShrink:0,borderRight:"1px solid #0d2240",background:"rgba(4,14,30,0.95)",display:"flex",flexDirection:"column",overflowY:"auto"}}>
+        {/* LEFT */}
+        <div style={{width:255,flexShrink:0,borderRight:"1px solid #0d2240",background:"rgba(4,14,30,0.95)",display:"flex",flexDirection:"column",overflowY:"auto"}}>
           <div style={{padding:"12px 14px"}}>
             <p style={{fontSize:11,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"#2979FF",margin:"0 0 10px"}}>Generar con IA</p>
 
@@ -425,87 +374,82 @@ Responde con exactamente el contenido solicitado entre las marcas.`
             <div style={{display:"flex",gap:4,marginBottom:10}}>
               {CONTENT_TYPES.map(ct=>(
                 <button key={ct.id} onClick={()=>setContentType(ct.id)} title={ct.desc}
-                  style={{flex:1,padding:"5px 4px",borderRadius:8,fontSize:10,fontWeight:700,cursor:"pointer",
+                  style={{flex:1,padding:"6px 4px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer",
                     background:contentType===ct.id?"rgba(41,121,255,0.2)":"rgba(255,255,255,0.04)",
                     color:contentType===ct.id?"#2979FF":"rgba(255,255,255,0.4)",
                     border:`1px solid ${contentType===ct.id?"rgba(41,121,255,0.5)":"rgba(255,255,255,0.07)"}`}}>
-                  {ct.emoji}<br/>{ct.label}
+                  {ct.label}
                 </button>
               ))}
             </div>
 
-            {/* Topic input */}
-            <label style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.45)",display:"block",marginBottom:5}}>Tema o principio</label>
-            <textarea
-              value={topic}
-              onChange={e=>setTopic(e.target.value)}
-              placeholder="Ej: La importancia de ahorrar el 10% de tu sueldo"
-              rows={3}
+            {/* Topic */}
+            <label style={{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.45)",display:"block",marginBottom:4}}>Tema o principio</label>
+            <textarea value={topic} onChange={e=>setTopic(e.target.value)}
+              placeholder="Ej: Honra a Dios con tus primicias..." rows={3}
               style={{width:"100%",borderRadius:10,padding:"8px 10px",fontSize:12,color:"white",background:"rgba(255,255,255,0.06)",border:"1px solid #0d2240",fontFamily:"Inter,sans-serif",resize:"none",outline:"none",boxSizing:"border-box"}}
-              onFocus={e=>e.target.style.borderColor="#2979FF66"}
-              onBlur={e=>e.target.style.borderColor="#0d2240"}
-            />
+              onFocus={e=>e.target.style.borderColor="#2979FF66"} onBlur={e=>e.target.style.borderColor="#0d2240"}/>
 
-            {/* Angulos emocionales */}
+            {/* Angulos */}
             <p style={{fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(255,255,255,0.4)",margin:"12px 0 8px"}}>
               Angulos emocionales
-              <span style={{fontSize:10,fontWeight:400,marginLeft:6,color:"rgba(255,255,255,0.25)"}}>{selectedAngulos.length} selec.</span>
+              <span style={{fontSize:10,fontWeight:400,marginLeft:6,color:"rgba(255,255,255,0.25)"}}>{selectedAngulos.length} sel.</span>
             </p>
-            <div style={{display:"flex",flexDirection:"column",gap:5}}>
+            <div style={{display:"flex",flexDirection:"column",gap:4}}>
               {ANGULOS.map(a=>{
                 const sel=selectedAngulos.includes(a.id)
                 return(
                   <button key={a.id} onClick={()=>toggleAngulo(a.id)}
                     style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:10,cursor:"pointer",textAlign:"left",
-                      background:sel?"rgba(41,121,255,0.15)":"rgba(255,255,255,0.04)",
-                      border:`1px solid ${sel?"rgba(41,121,255,0.4)":"rgba(255,255,255,0.06)"}`,
-                      transition:"all .15s"}}>
-                    <div style={{width:16,height:16,borderRadius:4,border:`2px solid ${sel?"#2979FF":"rgba(255,255,255,0.2)"}`,background:sel?"#2979FF":"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      {sel&&<span style={{color:"white",fontSize:10,lineHeight:1}}>âœ“</span>}
+                      background:sel?`${a.color}18`:"rgba(255,255,255,0.04)",
+                      border:`1px solid ${sel?a.color+"55":"rgba(255,255,255,0.06)"}`,transition:"all .15s"}}>
+                    <div style={{width:15,height:15,borderRadius:4,border:`2px solid ${sel?a.color:"rgba(255,255,255,0.2)"}`,background:sel?a.color:"transparent",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      {sel&&<span style={{color:"white",fontSize:9,lineHeight:1,fontWeight:900}}>v</span>}
                     </div>
                     <div>
-                      <p style={{fontSize:12,fontWeight:600,color:sel?"white":"rgba(255,255,255,0.6)",margin:0}}>{a.emoji} {a.label}</p>
-                      <p style={{fontSize:10,color:"rgba(255,255,255,0.3)",margin:0}}>{a.desc}</p>
+                      <p style={{fontSize:12,fontWeight:600,color:sel?"white":"rgba(255,255,255,0.55)",margin:0}}>{a.label}</p>
+                      <p style={{fontSize:10,color:"rgba(255,255,255,0.28)",margin:0}}>{a.desc}</p>
                     </div>
                   </button>
                 )
               })}
             </div>
 
-            {/* Error */}
             {genError&&<p style={{fontSize:11,color:"#FF5252",marginTop:8,padding:"6px 8px",background:"rgba(255,82,82,0.1)",borderRadius:8,border:"1px solid rgba(255,82,82,0.2)"}}>{genError}</p>}
 
-            {/* Generate button */}
-            <button
-              onClick={generateCarousel}
-              disabled={generating}
+            <button onClick={generateCarousel} disabled={generating}
               style={{width:"100%",marginTop:12,padding:"10px",borderRadius:12,fontSize:13,fontWeight:700,cursor:generating?"wait":"pointer",
                 background:generating?"rgba(41,121,255,0.2)":"linear-gradient(135deg,#2979FF,#00E5FF)",
                 color:"white",border:"none",opacity:generating?.7:1,transition:"all .2s"}}>
-              {generating?"Generando...":"âœ¦ Generar Contenido"}
+              {generating?"Generando...":"Generar Contenido"}
             </button>
 
-            {/* Quick topics */}
-            <p style={{fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(255,255,255,0.25)",margin:"14px 0 7px"}}>Temas rapidos</p>
-            {[
-              "Ahorrar el 10% de tu sueldo",
-              "Salir de deudas en 12 meses",
-              "Fondo de emergencia",
-              "Invertir desde cero",
-              "El poder del interes compuesto",
-              "Gastos hormiga que te roban",
-            ].map(t=>(
-              <button key={t} onClick={()=>setTopic(t)}
-                style={{display:"block",width:"100%",textAlign:"left",fontSize:11,padding:"5px 8px",borderRadius:7,marginBottom:4,cursor:"pointer",background:"transparent",color:"rgba(255,255,255,0.4)",border:"none",fontFamily:"Inter,sans-serif"}}
-                onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.color="#00E5FF";(e.currentTarget as HTMLElement).style.background="rgba(0,229,255,0.07)"}}
-                onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.color="rgba(255,255,255,0.4)";(e.currentTarget as HTMLElement).style.background="transparent"}}>
-                â€º {t}
-              </button>
-            ))}
+            {/* Quick topics groups */}
+            <div style={{marginTop:14}}>
+              <div style={{display:"flex",gap:4,marginBottom:8}}>
+                {QUICK_TOPICS.map((g,i)=>(
+                  <button key={i} onClick={()=>setActiveGroup(i)}
+                    style={{flex:1,padding:"4px 6px",borderRadius:7,fontSize:9,fontWeight:700,cursor:"pointer",
+                      background:activeGroup===i?"rgba(255,215,64,0.15)":"rgba(255,255,255,0.04)",
+                      color:activeGroup===i?"#FFD740":"rgba(255,255,255,0.3)",
+                      border:`1px solid ${activeGroup===i?"rgba(255,215,64,0.4)":"rgba(255,255,255,0.06)"}`}}>
+                    {i===0?"Rey Salomon":"Finanzas"}
+                  </button>
+                ))}
+              </div>
+              {QUICK_TOPICS[activeGroup].topics.map(t=>(
+                <button key={t} onClick={()=>setTopic(t)}
+                  style={{display:"block",width:"100%",textAlign:"left",fontSize:11,padding:"5px 8px",borderRadius:7,marginBottom:3,cursor:"pointer",background:"transparent",color:"rgba(255,255,255,0.4)",border:"none",fontFamily:"Inter,sans-serif"}}
+                  onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.color=activeGroup===0?"#FFD740":"#00E5FF";(e.currentTarget as HTMLElement).style.background=activeGroup===0?"rgba(255,215,64,0.07)":"rgba(0,229,255,0.07)"}}
+                  onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.color="rgba(255,255,255,0.4)";(e.currentTarget as HTMLElement).style.background="transparent"}}>
+                  â€º {t}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* CENTER: Canvas preview */}
+        {/* CENTER */}
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:12,overflowY:"auto",gap:10}}>
           <div style={{position:"relative",borderRadius:16,overflow:"hidden",width:pW,height:pH,border:`1px solid ${ac}44`,boxShadow:`0 0 40px ${ac}22`,flexShrink:0}}>
             <canvas ref={cvRef} style={{position:"absolute",inset:0,width:"100%",height:"100%"}}/>
@@ -527,11 +471,10 @@ Responde con exactamente el contenido solicitado entre las marcas.`
             )}
             {recording&&(
               <div style={{position:"absolute",inset:0,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",padding:10}}>
-                <div style={{background:"rgba(255,82,82,0.25)",border:"1px solid #FF5252",borderRadius:20,padding:"4px 12px",color:"#FF5252",fontSize:11,fontWeight:700}}>â— REC</div>
+                <div style={{background:"rgba(255,82,82,0.25)",border:"1px solid #FF5252",borderRadius:20,padding:"4px 12px",color:"#FF5252",fontSize:11,fontWeight:700}}>REC</div>
               </div>
             )}
           </div>
-          {/* Voiceover preview under canvas */}
           {cur.voiceover&&(
             <div style={{width:pW,padding:"8px 12px",borderRadius:10,background:"rgba(41,121,255,0.08)",border:"1px solid rgba(41,121,255,0.2)"}}>
               <p style={{fontSize:9,fontWeight:700,color:"#2979FF",margin:"0 0 3px",textTransform:"uppercase",letterSpacing:"0.08em"}}>VOZ SLIDE {idx+1}</p>
@@ -540,10 +483,8 @@ Responde con exactamente el contenido solicitado entre las marcas.`
           )}
         </div>
 
-        {/* RIGHT: Edit / Storyboard panel */}
-        <div style={{width:280,flexShrink:0,borderLeft:"1px solid #0d2240",background:"rgba(7,20,40,0.85)",display:"flex",flexDirection:"column",overflowY:"auto"}}>
-
-          {/* Panel tabs */}
+        {/* RIGHT */}
+        <div style={{width:275,flexShrink:0,borderLeft:"1px solid #0d2240",background:"rgba(7,20,40,0.85)",display:"flex",flexDirection:"column"}}>
           <div style={{display:"flex",borderBottom:"1px solid #0d2240",flexShrink:0}}>
             {([{id:"edit" as const,label:"Editar"},{id:"storyboard" as const,label:"Guion Visual"}]).map(tab=>(
               <button key={tab.id} onClick={()=>setRightPanel(tab.id)}
@@ -556,17 +497,12 @@ Responde con exactamente el contenido solicitado entre las marcas.`
             ))}
           </div>
 
-          {/* EDIT tab */}
           {rightPanel==="edit"&&(
-            <div style={{padding:12,display:"flex",flexDirection:"column",gap:11,flex:1}}>
-              <div style={{padding:"8px 10px",borderRadius:8,background:"rgba(0,0,0,0.15)",marginBottom:2}}>
+            <div style={{padding:12,display:"flex",flexDirection:"column",gap:11,flex:1,overflowY:"auto"}}>
+              <div style={{padding:"7px 10px",borderRadius:8,background:"rgba(0,0,0,0.15)"}}>
                 <p style={{fontSize:12,fontWeight:700,color:"white",margin:0}}>Slide {idx+1} <span style={{color:ac}}>â€” {cur.label}</span></p>
               </div>
-              {([
-                {f:"title" as const,label:"Titulo",multi:false},
-                {f:"subtitle" as const,label:"Subtitulo",multi:false},
-                {f:"body" as const,label:"Cuerpo",multi:true},
-              ]).map(({f,label,multi})=>(
+              {([{f:"title" as const,label:"Titulo",multi:false},{f:"subtitle" as const,label:"Subtitulo",multi:false},{f:"body" as const,label:"Cuerpo",multi:true}]).map(({f,label,multi})=>(
                 <div key={f}>
                   <label style={{fontSize:10,fontWeight:600,color:"rgba(255,255,255,0.45)",display:"block",marginBottom:4}}>{label}</label>
                   {multi
@@ -593,77 +529,52 @@ Responde con exactamente el contenido solicitado entre las marcas.`
                   ))}
                 </div>
               </div>
-              {/* Copy prompts button */}
               {(cur.imagePrompt||cur.videoPrompt)&&(
                 <button onClick={()=>copySlidePrompts(cur)}
-                  style={{padding:"7px 10px",borderRadius:9,fontSize:11,fontWeight:600,cursor:"pointer",background:"rgba(255,215,64,0.1)",color:"#FFD740",border:"1px solid rgba(255,215,64,0.25)",marginTop:4}}>
+                  style={{padding:"7px 10px",borderRadius:9,fontSize:11,fontWeight:600,cursor:"pointer",background:"rgba(255,215,64,0.1)",color:"#FFD740",border:"1px solid rgba(255,215,64,0.25)"}}>
                   Copiar prompts de este slide
                 </button>
               )}
             </div>
           )}
 
-          {/* STORYBOARD tab */}
           {rightPanel==="storyboard"&&(
-            <div style={{padding:12,display:"flex",flexDirection:"column",gap:10,flex:1,overflowY:"auto"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+            <div style={{padding:12,display:"flex",flexDirection:"column",gap:8,flex:1,overflowY:"auto"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <p style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.5)",margin:0,textTransform:"uppercase",letterSpacing:"0.1em"}}>Guion Visual</p>
                 <button onClick={exportStoryboard} style={{fontSize:10,padding:"3px 9px",borderRadius:7,fontWeight:600,cursor:"pointer",background:"rgba(255,215,64,0.12)",color:"#FFD740",border:"1px solid rgba(255,215,64,0.3)"}}>
                   Exportar .txt
                 </button>
               </div>
-
-              {/* Per-slide storyboard */}
               {slides.map((s,i)=>(
                 <div key={s.id} onClick={()=>setIdx(i)}
-                  style={{padding:"10px 11px",borderRadius:11,background:i===idx?"rgba(41,121,255,0.1)":"rgba(255,255,255,0.03)",border:`1px solid ${i===idx?"rgba(41,121,255,0.35)":"rgba(255,255,255,0.06)"}`,cursor:"pointer"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  style={{padding:"9px 11px",borderRadius:11,background:i===idx?"rgba(41,121,255,0.1)":"rgba(255,255,255,0.03)",border:`1px solid ${i===idx?"rgba(41,121,255,0.35)":"rgba(255,255,255,0.06)"}`,cursor:"pointer"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
                     <span style={{fontSize:10,fontWeight:700,color:i===idx?ac:"rgba(255,255,255,0.5)"}}>{i+1}. {s.label}</span>
                     {s.duration&&<span style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>{s.duration}s</span>}
                   </div>
-                  {s.voiceover&&(
-                    <div style={{marginBottom:5}}>
-                      <p style={{fontSize:9,fontWeight:700,color:"#00E5FF",margin:"0 0 2px",textTransform:"uppercase"}}>VOZ</p>
-                      <p style={{fontSize:10,color:"rgba(255,255,255,0.6)",margin:0,lineHeight:1.45}}>{s.voiceover}</p>
-                    </div>
-                  )}
-                  {s.imagePrompt&&(
-                    <div style={{marginBottom:5}}>
-                      <p style={{fontSize:9,fontWeight:700,color:"#FFD740",margin:"0 0 2px",textTransform:"uppercase"}}>IMAGEN</p>
-                      <p style={{fontSize:9,color:"rgba(255,255,255,0.45)",margin:0,lineHeight:1.4}}>{s.imagePrompt.slice(0,90)}...</p>
-                    </div>
-                  )}
-                  {s.videoPrompt&&(
-                    <div>
-                      <p style={{fontSize:9,fontWeight:700,color:"#FF5252",margin:"0 0 2px",textTransform:"uppercase"}}>VIDEO (Higgsfield)</p>
-                      <p style={{fontSize:9,color:"rgba(255,255,255,0.45)",margin:0,lineHeight:1.4}}>{s.videoPrompt.slice(0,90)}...</p>
-                    </div>
-                  )}
+                  {s.voiceover&&<p style={{fontSize:10,color:"rgba(255,255,255,0.6)",margin:"0 0 4px",lineHeight:1.45}}>{s.voiceover}</p>}
+                  {s.videoPrompt&&<p style={{fontSize:9,color:"rgba(255,82,82,0.7)",margin:0,lineHeight:1.3}}>{s.videoPrompt.slice(0,80)}...</p>}
                   <button onClick={e=>{e.stopPropagation();copySlidePrompts(s)}}
-                    style={{marginTop:6,fontSize:9,padding:"2px 7px",borderRadius:6,fontWeight:600,cursor:"pointer",background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.4)",border:"none"}}>
+                    style={{marginTop:5,fontSize:9,padding:"2px 7px",borderRadius:6,fontWeight:600,cursor:"pointer",background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.4)",border:"none"}}>
                     Copiar prompts
                   </button>
                 </div>
               ))}
-
-              {/* Reel script */}
               {reelScript&&(
-                <div style={{marginTop:8,padding:"10px 11px",borderRadius:11,background:"rgba(255,82,82,0.06)",border:"1px solid rgba(255,82,82,0.2)"}}>
-                  <p style={{fontSize:10,fontWeight:700,color:"#FF5252",margin:"0 0 7px",textTransform:"uppercase",letterSpacing:"0.1em"}}>Guion Reel</p>
-                  <pre style={{fontSize:9,color:"rgba(255,255,255,0.55)",margin:0,whiteSpace:"pre-wrap",lineHeight:1.55,fontFamily:"Inter,sans-serif"}}>
-                    {reelScript}
-                  </pre>
-                  <button onClick={()=>{navigator.clipboard.writeText(reelScript).then(()=>toast2("Guion copiado"))}}
+                <div style={{padding:"10px 11px",borderRadius:11,background:"rgba(255,82,82,0.06)",border:"1px solid rgba(255,82,82,0.2)"}}>
+                  <p style={{fontSize:10,fontWeight:700,color:"#FF5252",margin:"0 0 7px",textTransform:"uppercase"}}>Guion Reel</p>
+                  <pre style={{fontSize:9,color:"rgba(255,255,255,0.55)",margin:0,whiteSpace:"pre-wrap",lineHeight:1.55,fontFamily:"Inter,sans-serif"}}>{reelScript}</pre>
+                  <button onClick={()=>navigator.clipboard.writeText(reelScript).then(()=>toast2("Copiado!"))}
                     style={{marginTop:8,width:"100%",fontSize:10,padding:"5px",borderRadius:7,fontWeight:600,cursor:"pointer",background:"rgba(255,82,82,0.12)",color:"#FF5252",border:"1px solid rgba(255,82,82,0.25)"}}>
                     Copiar guion completo
                   </button>
                 </div>
               )}
-
-              {!reelScript&&slides.every(s=>!s.imagePrompt)&&(
-                <div style={{padding:"20px 16px",textAlign:"center"}}>
-                  <p style={{fontSize:30,margin:"0 0 8px"}}>ðŸŽ¬</p>
-                  <p style={{fontSize:12,color:"rgba(255,255,255,0.4)",margin:0}}>Genera contenido con IA para ver el guion visual aqui</p>
+              {!reelScript&&slides.every(s=>!s.voiceover)&&(
+                <div style={{padding:"20px",textAlign:"center"}}>
+                  <p style={{fontSize:28,margin:"0 0 8px"}}>&#127916;</p>
+                  <p style={{fontSize:12,color:"rgba(255,255,255,0.4)",margin:0}}>Genera contenido con IA para ver el guion aqui</p>
                 </div>
               )}
             </div>
@@ -672,7 +583,6 @@ Responde con exactamente el contenido solicitado entre las marcas.`
 
       </div>
 
-      {/* Save modal */}
       {saveModal&&(
         <div style={{position:"fixed",inset:0,zIndex:50,display:"flex",alignItems:"center",justifyContent:"center",padding:16,background:"rgba(2,12,26,0.88)",backdropFilter:"blur(8px)"}}>
           <div style={{width:"100%",maxWidth:300,borderRadius:18,padding:22,background:"rgba(13,21,38,0.98)",border:"1px solid rgba(0,200,83,0.3)"}}>
