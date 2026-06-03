@@ -147,7 +147,7 @@ export default function Editor(){
   const [saveModal,setSaveModal]=useState(false)
   const [saveName,setSaveName]=useState("")
   const [rightPanel,setRightPanel]=useState<RightPanel>("edit")
-  const [topic,setTopic]=useState("")
+  const [topic,setTopic]=useState("Honra a Dios con tus primicias y tus graneros se llenaran")
   const [contentType,setContentType]=useState<string>("both")
   const [selectedAngulos,setSelectedAngulos]=useState<string[]>(["esperanza","identidad"])
   const [generating,setGenerating]=useState(false)
@@ -442,7 +442,7 @@ Responde SOLO con el contenido entre las marcas indicadas.`
                   style={{display:"block",width:"100%",textAlign:"left",fontSize:11,padding:"5px 8px",borderRadius:7,marginBottom:3,cursor:"pointer",background:"transparent",color:"rgba(255,255,255,0.4)",border:"none",fontFamily:"Inter,sans-serif"}}
                   onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.color=activeGroup===0?"#FFD740":"#00E5FF";(e.currentTarget as HTMLElement).style.background=activeGroup===0?"rgba(255,215,64,0.07)":"rgba(0,229,255,0.07)"}}
                   onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.color="rgba(255,255,255,0.4)";(e.currentTarget as HTMLElement).style.background="transparent"}}>
-                  â€º {t}
+                  {">"} {t}
                 </button>
               ))}
             </div>
