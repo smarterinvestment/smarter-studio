@@ -10,7 +10,7 @@ type RightPanel = "edit" | "storyboard"
 interface Particle { x:number;y:number;vx:number;vy:number;r:number;op:number;pulse:number;ps:number }
 
 const DIMS: Record<Format,[number,number]> = { "1:1":[1,1],"9:16":[9,16],"4:5":[4,5] }
-const SPIN_LABELS = ["Situacion","Problema","Implicacion","Necesidad-Solucion","Rey Salomon Hook","CTA"]
+const SPIN_LABELS = ["Principio Biblico","Realidad Financiera","El Problema Oculto","El Costo del Tiempo","La Herramienta","CTA - Accion Hoy"]
 const THEMES: {c:Theme;name:string}[] = [
   {c:"#2979FF",name:"Azul"},{c:"#00E5FF",name:"Cyan"},{c:"#FFD740",name:"Oro"},
   {c:"#00C853",name:"Verde"},{c:"#FF5252",name:"Rojo"},{c:"multi",name:"Multi"},
@@ -54,12 +54,12 @@ const QUICK_TOPICS = [
 ]
 
 const DEFAULT_SLIDES: Slide[] = [
-  { id:1,label:"Situacion",title:"Sabias que el 80% pierde dinero?",subtitle:"La realidad que nadie te cuenta",body:"La mayoria trabaja toda su vida sin construir riqueza real." },
-  { id:2,label:"Problema",title:"El problema no es tu salario",subtitle:"Es lo que haces con el",body:"Sin estrategia, cada peso se escapa entre gastos invisibles y malos habitos." },
-  { id:3,label:"Implicacion",title:"10 anos mas tarde...",subtitle:"El costo del tiempo perdido",body:"Cada mes sin invertir es dinero que el interes compuesto nunca recuperara." },
-  { id:4,label:"Necesidad-Solucion",title:"La solucion es mas simple de lo que crees",subtitle:"Tres pasos que cambian todo",body:"1. Conoce tu flujo. 2. Elimina deudas toxicas. 3. Invierte automaticamente." },
-  { id:5,label:"Rey Salomon Hook",title:"El que cuida su dinero cuida su libertad",subtitle:"Proverbio milenario",body:"La prosperidad no es suerte, es disciplina convertida en habito diario." },
-  { id:6,label:"CTA",title:"Listo para cambiar tu historia?",subtitle:"El primer paso es hoy",body:"Sigue esta cuenta. Comenta LISTO y te envio mi guia gratuita." },
+  { id:1,label:"Principio Biblico",title:"Honra a Dios con tus primicias",subtitle:"Proverbios 3:9-10",body:"El primer fruto de todo lo que ganas pertenece a un proposito mayor. Quien honra este principio ve sus graneros llenarse. La prosperidad comienza con un acto de fe y orden." },
+  { id:2,label:"Realidad Financiera",title:"El 78% vive de cheque en cheque",subtitle:"Y no es culpa del salario",body:"La mayoria gana lo suficiente pero gasta sin conciencia. El dinero que entra, sale sin dejar rastro. Esto no es un problema de ingresos, es un problema de sistema." },
+  { id:3,label:"El Problema Oculto",title:"Nadie te enseno a administrar",subtitle:"Te ensenaron a trabajar, no a prosperar",body:"El sistema escolar te prepara para producir dinero, no para construir riqueza. Sin educacion financiera, el dinero siempre ganara la batalla contra ti." },
+  { id:4,label:"El Costo del Tiempo",title:"Cada mes que pasa te cuesta miles",subtitle:"El interes compuesto no espera",body:"Si empiezas a invertir 100 dolares al mes a los 25 vs a los 35, la diferencia al retirarte es de mas de 150,000 dolares. El tiempo es el activo mas valioso que tienes." },
+  { id:5,label:"La Herramienta",title:"Smarter Investment cambia las reglas",subtitle:"Tu consultor financiero 24/7",body:"Analiza tu situacion, te guia paso a paso y te ayuda a tomar decisiones inteligentes con tu dinero. No necesitas ser experto, necesitas la herramienta correcta." },
+  { id:6,label:"CTA - Accion Hoy",title:"El mejor momento fue ayer. El segundo es hoy.",subtitle:"Tu historia financiera cambia ahora",body:"Entra a Smarter Investment. Responde 3 preguntas. Recibe tu plan personalizado. Gratis. Sin excusas." },
 ]
 
 function rgba2(hex:string,a:number,i=0){
@@ -147,13 +147,15 @@ export default function Editor(){
   const [saveModal,setSaveModal]=useState(false)
   const [saveName,setSaveName]=useState("")
   const [rightPanel,setRightPanel]=useState<RightPanel>("edit")
-  const [topic,setTopic]=useState("Honra a Dios con tus primicias y tus graneros se llenaran")
+  const [topic,setTopic]=useState(QUICK_TOPICS[0].topics[0])
   const [contentType,setContentType]=useState<string>("both")
-  const [selectedAngulos,setSelectedAngulos]=useState<string[]>(["esperanza","identidad"])
+  const [selectedAngulos,setSelectedAngulos]=useState<string[]>(["esperanza","identidad","orgullo"])
   const [generating,setGenerating]=useState(false)
   const [genError,setGenError]=useState("")
   const [reelScript,setReelScript]=useState<string>("")
   const [activeGroup,setActiveGroup]=useState(0)
+  const [apiKey,setApiKey]=useState(()=>localStorage.getItem("ss-claude-key")||"")
+  const [showKey,setShowKey]=useState(false)
 
   const cvRef=useRef<HTMLCanvasElement>(null)
   const prevRef=useRef<HTMLDivElement>(null)
@@ -173,47 +175,58 @@ export default function Editor(){
   const generateCarousel=async()=>{
     if(!topic.trim()){setGenError("Escribe el tema o principio");return}
     if(selectedAngulos.length===0){setGenError("Selecciona al menos un angulo emocional");return}
-    const key=localStorage.getItem("ss-claude-key")
-    if(!key){setGenError("Configura tu Claude API Key en /chat primero");return}
+    const key=apiKey.trim()
+    if(!key){setGenError("Ingresa tu Claude API Key arriba");return}
+    localStorage.setItem("ss-claude-key",key)
     setGenerating(true);setGenError("");setReelScript("")
     const angDesc=selectedAngulos.map(id=>ANGULOS.find(a=>a.id===id)).filter(Boolean).map(a=>`${a!.label}: ${a!.desc}`).join("\n")
     const includeCarousel=contentType==="carousel"||contentType==="both"
     const includeReel=contentType==="reel"||contentType==="both"
 
-    const prompt=`Eres el Rey Salomon, experto en contenido financiero viral.
+    const prompt=`Eres el Rey Salomon â€” sabio financiero, consejero biblico y estratega de contenido viral para redes sociales.
 
-TEMA: ${topic}
-ANGULOS EMOCIONALES (usa para el tono, no los menciones literalmente):
+Tu mision: crear contenido que DESPIERTE conciencia financiera, genere CURIOSIDAD, mueva EMOCIONES profundas y dirija al lector a tomar accion con la herramienta Smarter Investment.
+
+PRINCIPIO O TEMA BASE: ${topic}
+ANGULOS EMOCIONALES para guiar el tono (no mencionar literalmente):
 ${angDesc}
 
-${includeCarousel?`=== PARTE 1: CARRUSEL INSTAGRAM 6 SLIDES SPIN ===
+ESTRUCTURA DE 6 SLIDES â€” sigue este orden exacto:
+1. PRINCIPIO BIBLICO: Abre con el versiculo o principio de Salomon relacionado al tema. Genera asombro y autoridad espiritual. Que el lector sienta que hay sabiduria antigua detras de cada consejo.
+2. REALIDAD FINANCIERA: Estadistica o verdad impactante que genera conciencia. El lector debe pensar "eso me esta pasando a mi". Usa numeros reales, porcentajes, datos que sorprendan.
+3. EL PROBLEMA OCULTO: Nombra el problema que nadie quiere ver. El sistema, la educacion, los habitos. Genera tension y reconocimiento. El lector dice "ahora entiendo por que".
+4. EL COSTO DEL TIEMPO: Muestra lo que pierde cada mes que no actua. Usa el interes compuesto, ejemplos concretos con dinero real. Genera urgencia sin miedo, con claridad matematica.
+5. LA HERRAMIENTA â€” SMARTER INVESTMENT: Presenta la solucion. Smarter Investment es un consultor financiero inteligente que analiza tu situacion, te da un plan personalizado y te acompana a construir riqueza paso a paso. Sencillo, poderoso, accesible.
+6. CTA ACCION HOY: Llamada a la accion directa hacia Smarter Investment. Urgente, clara, con beneficio inmediato. Comenta, entra, descarga, actua. El primer paso es gratis.
+
+${includeCarousel?`=== PARTE 1: CARRUSEL INSTAGRAM 6 SLIDES ===
 Responde el JSON exactamente entre estas marcas, sin markdown:
 CAROUSEL_JSON_START
 [
-  {"label":"Situacion","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":8},
-  {"label":"Problema","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":8},
-  {"label":"Implicacion","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":9},
-  {"label":"Necesidad-Solucion","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":10},
-  {"label":"Rey Salomon Hook","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":9},
-  {"label":"CTA","title":"...","subtitle":"...","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":8}
+  {"label":"Principio Biblico","title":"...","subtitle":"libro capitulo:versiculo","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":9},
+  {"label":"Realidad Financiera","title":"...","subtitle":"dato impactante","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":8},
+  {"label":"El Problema Oculto","title":"...","subtitle":"la raiz del problema","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":9},
+  {"label":"El Costo del Tiempo","title":"...","subtitle":"matematica que duele","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":10},
+  {"label":"La Herramienta","title":"...","subtitle":"Smarter Investment","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":10},
+  {"label":"CTA - Accion Hoy","title":"...","subtitle":"el momento es ahora","body":"...","voiceover":"...","imagePrompt":"...","videoPrompt":"...","duration":8}
 ]
 CAROUSEL_JSON_END
-Reglas JSON: title maximo 8 palabras impactante, subtitle maximo 6 palabras, body 2-3 oraciones concretas, voiceover 1-2 oraciones para narrar, imagePrompt descripcion visual detallada en ingles para Midjourney, videoPrompt descripcion cinematografica en ingles para Higgsfield/Runway.`:""}
+Reglas: title maximo 8 palabras con gancho fuerte, subtitle referencia biblica o dato concreto, body 2-3 oraciones poderosas y concretas, voiceover narracion natural 1-2 oraciones, imagePrompt descripcion visual en ingles para Midjourney estilo cinematografico oscuro con dorado, videoPrompt escena en movimiento para Higgsfield con camara cinematografica.`:""}
 
-${includeReel?`=== PARTE 2: GUION REEL VERTICAL 9:16 (30-60 segundos) ===
+${includeReel?`=== PARTE 2: GUION REEL VERTICAL 9:16 (45-60 segundos) ===
 REEL_SCRIPT_START
 DURACION TOTAL: [X segundos]
-HOOK (0-3s): [texto en pantalla] | VISUAL: [descripcion escena] | VOZ: [narracion]
-ESCENA 1 (3-10s): [descripcion visual para Higgsfield] | TEXTO: [texto en pantalla] | VOZ: [narracion]
-ESCENA 2 (10-20s): [descripcion visual] | TEXTO: [texto] | VOZ: [narracion]
-ESCENA 3 (20-32s): [descripcion visual] | TEXTO: [texto] | VOZ: [narracion]
-ESCENA 4 (32-45s): [descripcion visual] | TEXTO: [texto] | VOZ: [narracion]
-CTA (45-55s): [descripcion visual] | TEXTO: [texto] | VOZ: [narracion]
-PROMPT HIGGSFIELD: [prompt completo en ingles para generar el video, cinematografico, con movimiento de camara, colores, atmosfera]
+HOOK (0-4s): [frase de apertura impactante en pantalla] | VISUAL: [escena de apertura] | VOZ: [narracion del hook]
+PRINCIPIO (4-12s): [versiculo o sabiduria en pantalla] | VISUAL: [escena] | VOZ: [narracion]
+PROBLEMA (12-22s): [realidad financiera en pantalla] | VISUAL: [escena] | VOZ: [narracion]
+URGENCIA (22-35s): [costo del tiempo en pantalla] | VISUAL: [escena con numeros] | VOZ: [narracion]
+SOLUCION (35-48s): [Smarter Investment como respuesta] | VISUAL: [escena de app/herramienta] | VOZ: [narracion]
+CTA (48-58s): [llamada a accion clara] | VISUAL: [escena motivacional] | VOZ: [cierre poderoso]
+PROMPT HIGGSFIELD: [prompt completo en ingles para video cinematografico, dark financial theme, gold accents, dramatic lighting, camera movements]
 MUSICA: [tipo de musica y mood]
 REEL_SCRIPT_END`:""}
 
-Responde SOLO con el contenido entre las marcas indicadas.`
+Responde SOLO con el contenido entre las marcas indicadas. SÃ© poderoso, biblico, concreto y viral.`
 
     try{
       const res=await fetch("https://api.anthropic.com/v1/messages",{
@@ -415,6 +428,25 @@ Responde SOLO con el contenido entre las marcas indicadas.`
               })}
             </div>
 
+            {/* API Key */}
+            <div style={{marginTop:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                <label style={{fontSize:11,fontWeight:600,color:apiKey?"#00C853":"rgba(255,255,255,0.45)"}}>
+                  {apiKey?"API Key configurada":"Claude API Key"}
+                </label>
+                <button onClick={()=>setShowKey(p=>!p)} style={{fontSize:10,color:"rgba(255,255,255,0.3)",background:"none",border:"none",cursor:"pointer",padding:0}}>
+                  {showKey?"ocultar":"mostrar"}
+                </button>
+              </div>
+              <input
+                type={showKey?"text":"password"}
+                value={apiKey}
+                onChange={e=>{setApiKey(e.target.value);localStorage.setItem("ss-claude-key",e.target.value)}}
+                placeholder="sk-ant-..."
+                style={{width:"100%",borderRadius:9,padding:"7px 10px",fontSize:11,color:"white",background:"rgba(255,255,255,0.06)",border:`1px solid ${apiKey?"rgba(0,200,83,0.4)":"rgba(255,82,82,0.3)"}`,fontFamily:"Inter,sans-serif",outline:"none",boxSizing:"border-box"}}
+              />
+            </div>
+
             {genError&&<p style={{fontSize:11,color:"#FF5252",marginTop:8,padding:"6px 8px",background:"rgba(255,82,82,0.1)",borderRadius:8,border:"1px solid rgba(255,82,82,0.2)"}}>{genError}</p>}
 
             <button onClick={generateCarousel} disabled={generating}
@@ -455,7 +487,7 @@ Responde SOLO con el contenido entre las marcas indicadas.`
             <canvas ref={cvRef} style={{position:"absolute",inset:0,width:"100%",height:"100%"}}/>
             {!recording&&(
               <div ref={prevRef} style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"space-between",padding:16,background:"rgba(2,12,26,0.45)"}}>
-                
+                <span style={{fontSize:9,fontWeight:700,padding:"2px 9px",borderRadius:20,alignSelf:"flex-start",background:`${ac}33`,color:ac,border:`1px solid ${ac}66`}}>{cur.label}</span>
                 <div>
                   <p style={{fontSize:9,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.1em",color:ac,margin:"0 0 5px"}}>{cur.subtitle}</p>
                   <h2 style={{fontSize:Math.max(13,pW/13),fontWeight:800,color:"white",lineHeight:1.25,margin:"0 0 7px"}}>{cur.title}</h2>
