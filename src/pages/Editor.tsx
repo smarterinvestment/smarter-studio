@@ -54,12 +54,12 @@ const QUICK_TOPICS = [
 ]
 
 const DEFAULT_SLIDES: Slide[] = [
-  { id:1,label:"Principio Biblico",title:"Honra a Dios con tus primicias",subtitle:"Proverbios 3:9-10",body:"El primer fruto de todo lo que ganas pertenece a un proposito mayor. Quien honra este principio ve sus graneros llenarse. La prosperidad comienza con un acto de fe y orden." },
-  { id:2,label:"Realidad Financiera",title:"El 78% vive de cheque en cheque",subtitle:"Y no es culpa del salario",body:"La mayoria gana lo suficiente pero gasta sin conciencia. El dinero que entra, sale sin dejar rastro. Esto no es un problema de ingresos, es un problema de sistema." },
-  { id:3,label:"El Problema Oculto",title:"Nadie te enseno a administrar",subtitle:"Te ensenaron a trabajar, no a prosperar",body:"El sistema escolar te prepara para producir dinero, no para construir riqueza. Sin educacion financiera, el dinero siempre ganara la batalla contra ti." },
-  { id:4,label:"El Costo del Tiempo",title:"Cada mes que pasa te cuesta miles",subtitle:"El interes compuesto no espera",body:"Si empiezas a invertir 100 dolares al mes a los 25 vs a los 35, la diferencia al retirarte es de mas de 150,000 dolares. El tiempo es el activo mas valioso que tienes." },
-  { id:5,label:"La Herramienta",title:"Smarter Investment cambia las reglas",subtitle:"Tu consultor financiero 24/7",body:"Analiza tu situacion, te guia paso a paso y te ayuda a tomar decisiones inteligentes con tu dinero. No necesitas ser experto, necesitas la herramienta correcta." },
-  { id:6,label:"CTA - Accion Hoy",title:"El mejor momento fue ayer. El segundo es hoy.",subtitle:"Tu historia financiera cambia ahora",body:"Entra a Smarter Investment. Responde 3 preguntas. Recibe tu plan personalizado. Gratis. Sin excusas." },
+  { id:1,label:"El Espejo Biblico",title:"Honra a Dios con tus primicias",subtitle:"Proverbios 3:9-10",body:"El primer fruto de todo lo que ganas. No lo que sobra. Lo primero. Esa es la diferencia entre el que prospera y el que siempre le falta. Cuanto tiempo llevas dando las sobras?" },
+  { id:2,label:"La Verdad que Duele",title:"7 de cada 10 familias no tienen ahorros",subtitle:"Y trabajan mas de 40 horas a la semana",body:"No es pereza. Trabajan duro. El problema es que nadie les enseno que hacer con lo que ganan. El dinero llega y se va sin dejar rastro." },
+  { id:3,label:"El Sistema",title:"Te ensenaron a trabajar, no a prosperar",subtitle:"12 anos de escuela, cero de finanzas",body:"El sistema te preparo para producir dinero para otros. No para construirte a ti. Eso no es tu culpa. Pero seguir igual despues de saberlo, si lo es." },
+  { id:4,label:"El Precio del Tiempo",title:"Cada mes que pasa vale miles de pesos",subtitle:"El interes compuesto no perdona",body:"Quien empieza a ahorrar 2000 pesos al mes a los 25 acumula mas del doble que quien empieza a los 35. La diferencia no es el dinero. Es el tiempo que ya paso." },
+  { id:5,label:"El Cambio",title:"No tienes que hacer esto solo",subtitle:"El primer paso es tener un plan",body:"Cuando alguien toma control de su dinero, algo cambia por dentro. No es solo la cuenta bancaria. Smarter Investment existe para acompanarte en ese camino, sin tecnicismos." },
+  { id:6,label:"La Invitacion",title:"Y si hoy es el dia que todo cambia?",subtitle:"Una decision puede reescribir tu historia",body:"No te estoy vendiendo nada. Solo te pregunto: si alguien que ya estuvo donde tu estas te dijera que hay una forma distinta, le darias una oportunidad?" },
 ]
 
 function rgba2(hex:string,a:number,i=0){
@@ -160,12 +160,7 @@ export default function Editor(){
   const cvRef=useRef<HTMLCanvasElement>(null)
   const prevRef=useRef<HTMLDivElement>(null)
   const cur=slides[idx]
-  const ac=theme==="multi"?"#2979FF":theme
-
-  useCanvas(cvRef as React.RefObject<HTMLCanvasElement>,theme,cur,recording)
-
-  const upd=(f:keyof Slide,v:string)=>setSlides(p=>p.map((s,i)=>i===idx?{...s,[f]:v}:s))
-  const toast2=(m:string)=>{setToast(m);setTimeout(()=>setToast(""),3000)}
+  const ac=theme==="multi"?"#FFD740":themesetTimeout(()=>setToast(""),3000)}
 
   const [fw,fh]=DIMS[fmt]
   const maxH=Math.min(460,window.innerHeight-200)
@@ -487,7 +482,7 @@ Responde SOLO con el contenido entre las marcas indicadas. SÃ© poderoso, bibli
             <canvas ref={cvRef} style={{position:"absolute",inset:0,width:"100%",height:"100%"}}/>
             {!recording&&(
               <div ref={prevRef} style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"space-between",padding:16,background:"rgba(2,12,26,0.45)"}}>
-                <span style={{fontSize:9,fontWeight:700,padding:"2px 9px",borderRadius:20,alignSelf:"flex-start",background:`${ac}33`,color:ac,border:`1px solid ${ac}66`}}>{cur.label}</span>
+                
                 <div>
                   <p style={{fontSize:9,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.1em",color:ac,margin:"0 0 5px"}}>{cur.subtitle}</p>
                   <h2 style={{fontSize:Math.max(13,pW/13),fontWeight:800,color:"white",lineHeight:1.25,margin:"0 0 7px"}}>{cur.title}</h2>
