@@ -68,7 +68,8 @@ function rgba2(hex:string,a:number,i=0){
   return `rgba(${r},${g},${b},${a})`
 }
 
-function useCanvas(ref:React.RefObject<HTMLCanvasElement>,theme:Theme,slide:Slide,recording:boolean){
+// @ts-ignore
+function _useCanvas(ref:React.RefObject<HTMLCanvasElement>,theme:Theme,slide:Slide,recording:boolean){
   const pts=useRef<Particle[]>([])
   const raf=useRef(0)
   const thR=useRef(theme); useEffect(()=>{thR.current=theme},[theme])
@@ -160,7 +161,8 @@ export default function Editor(){
   const cvRef=useRef<HTMLCanvasElement>(null)
   const prevRef=useRef<HTMLDivElement>(null)
   const cur=slides[idx]
-  const ac=theme==="multi"?"#FFD740":themesetTimeout(()=>setToast(""),3000)}
+  const ac=theme==="multi"?"#FFD740":theme
+  const toast2=(m:string)=>{setToast(m);setTimeout(()=>setToast(""),3000)}
 
   const [fw,fh]=DIMS[fmt]
   const maxH=Math.min(460,window.innerHeight-200)
@@ -234,7 +236,7 @@ Responde SOLO con el contenido entre las marcas indicadas. SÃ© poderoso, bibli
       const text=data.content?.[0]?.text||""
       if(includeCarousel){
         const m=text.match(/CAROUSEL_JSON_START\s*([\s\S]*?)\s*CAROUSEL_JSON_END/)
-        if(m){setSlides(JSON.parse(m[1]).map((s:Slide,i:number)=>({id:i+1,...s})));setIdx(0)}
+        if(m){setSlides(JSON.parse(m[1]).map((s:Slide,i:number)=>({...s,id:i+1})));setIdx(0)}
       }
       if(includeReel){
         const m=text.match(/REEL_SCRIPT_START\s*([\s\S]*?)\s*REEL_SCRIPT_END/)
@@ -245,6 +247,8 @@ Responde SOLO con el contenido entre las marcas indicadas. SÃ© poderoso, bibli
       setGenError(e instanceof Error?e.message:"Error generando contenido")
     }finally{setGenerating(false)}
   }
+
+  const upd=(field:string,val:string)=>setSlides(p=>p.map((s,i)=>i===idx?{...s,[field]:val}:s))
 
   const toggleAngulo=(id:string)=>setSelectedAngulos(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id])
 
@@ -454,7 +458,7 @@ Responde SOLO con el contenido entre las marcas indicadas. SÃ© poderoso, bibli
             {/* Quick topics groups */}
             <div style={{marginTop:14}}>
               <div style={{display:"flex",gap:4,marginBottom:8}}>
-                {QUICK_TOPICS.map((g,i)=>(
+                {QUICK_TOPICS.map((_g,i)=>(
                   <button key={i} onClick={()=>setActiveGroup(i)}
                     style={{flex:1,padding:"4px 6px",borderRadius:7,fontSize:9,fontWeight:700,cursor:"pointer",
                       background:activeGroup===i?"rgba(255,215,64,0.15)":"rgba(255,255,255,0.04)",
