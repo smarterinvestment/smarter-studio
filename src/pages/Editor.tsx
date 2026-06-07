@@ -80,7 +80,9 @@ function _useCanvas(ref:React.RefObject<HTMLCanvasElement>,theme:Theme,slide:Sli
     const cv=ref.current; if(!cv) return
     const ctx=cv.getContext("2d"); if(!ctx) return
     const init=()=>{
-      cv.width=cv.offsetWidth; cv.height=cv.offsetHeight
+      const dpr=window.devicePixelRatio||1
+      cv.width=cv.offsetWidth*dpr; cv.height=cv.offsetHeight*dpr
+      cv.getContext("2d")!.scale(dpr,dpr)
       pts.current=Array.from({length:80},()=>({
         x:Math.random()*(cv.width||400),y:Math.random()*(cv.height||600),
         vx:(Math.random()-.5)*.6,vy:(Math.random()-.5)*.6,
@@ -484,8 +486,8 @@ Responde SOLO con el contenido entre las marcas indicadas. SÃ© poderoso, bibli
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:12,overflowY:"auto",gap:10}}>
           <div style={{position:"relative",borderRadius:16,overflow:"hidden",width:pW,height:pH,border:`1px solid ${ac}44`,boxShadow:`0 0 40px ${ac}22`,flexShrink:0}}>
             <canvas ref={cvRef} style={{position:"absolute",inset:0,width:"100%",height:"100%"}}/>
-            {!recording&&(
-              <div ref={prevRef} style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"space-between",padding:16,background:"rgba(2,12,26,0.45)"}}>
+            {(
+              <div ref={prevRef} style={{opacity:recording?0:1,pointerEvents:recording?"none":"auto",position:"absolute",inset:0,display:"flex",flexDirection:"column",justifyContent:"space-between",padding:16,background:"rgba(2,12,26,0.45)"}}>
                 
                 <div>
                   <p style={{fontSize:9,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.1em",color:ac,margin:"0 0 5px"}}>{cur.subtitle}</p>
